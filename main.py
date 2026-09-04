@@ -3,12 +3,22 @@ import time
 from time import sleep
 from PIL import Image, ImageTk
 from picamera2 import Picamera2, Preview
+from tkinter import filedialog
 
 first = 0
 picam2 = Picamera2()
+folder_selected = '0'
+stop_flag = 0
+
+def choose_saving_directory():
+    # Prompt user to pick an existing folder
+    global folder_selected
+    folder_selected = filedialog.askdirectory(initialdir="/", title="Choose Saving Directory")
 
 def close_camera():
     global picam2
+    global stop_flag
+    stop_flag = 1
     print('Closing Camera...')
     picam2.close()  # Releases the hardware resource back to the OS
     
@@ -19,21 +29,25 @@ def display_image(image1):
 def capture_image():
     global first
     global picam2
+    global folder_selected
     picam2.start()
     time.sleep(1)
     variable = (time.strftime("%y-%b-%d_%H:%M:%S"))
-    picam2.capture_file('Test_Image1'+variable+'.png')
+    folder_selected = str(folder_selected)
+    print(folder_selected)
+    picam2.capture_file(folder_selected + '/Test_Image1'+variable+'.png')
     picam2.stop()
     print("Capture Image button clicked!")
     # Here you would add the code to interface with the Raspberry Pi camera and capture an image
 
 def start_camera():
     global picam2
-    while 1:
+    global stop_flag
+    while stop_flag == 0:
         picam2.start()
-        time.sleep(0.05)
+        time.sleep(0.07)
         frame = picam2.capture_array()
-        print(frame.shape)
+        #print(frame.shape)
         image1 = Image.fromarray(frame)
         image1 = ImageTk.PhotoImage(image1)
         display_image(image1)
@@ -78,6 +92,8 @@ button = tk.Button(root, text="Capture Image", width=25, command=capture_image)
 button.place(x=610, y=50)
 button = tk.Button(root, text="Stop Camera", width=25, command=close_camera)
 button.place(x=610, y=100)
+button = tk.Button(root, text="Select folder", width=25, command=choose_saving_directory)
+button.place(x=610, y=150)
 # 5. Start the event loop to keep the window open
 root.mainloop()
 print('Program exiting....Releasing all the harware.')
